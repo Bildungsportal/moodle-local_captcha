@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+        <location>vendor/gregwar/captcha</location>
+        <name>gregwar/captcha</name>
+        <version>v1.0</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>vendor/symfony/deprecation-contracts</location>
+        <name>symfony/deprecation-contracts</name>
+        <version></version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>vendor/symfony/finder</location>
+        <name>symfony/finder</name>
+        <version></version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>vendor/symfony/polyfill-php80</location>
+        <name>symfony/polyfill-php80</name>
+        <version></version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+</libraries>

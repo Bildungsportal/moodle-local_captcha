@@ -29,6 +29,37 @@ use Gregwar\Captcha\PhraseBuilder;
 
 $phraseBuilder = new PhraseBuilder(6, 'abcdefghijklmnpqrstuvwxyz123456789');
 
+function pick_random_file($directory) {
+    if (!is_dir($directory)) {
+        return null;
+    }
+
+    $opendir = opendir($directory);
+    if (!$opendir) {
+        return null;
+    }
+
+    $selected_file = null;
+    $count = 0;
+
+    // Iterate through alll files
+    while (($file = readdir($opendir)) !== false) {
+        if ($file === '.' || $file === '..') {
+            continue; // Skip traversals
+        }
+
+        $count++;
+        // First file always selected, each subsequent file has diminishing odds based on it's index within the dir, resulting in equal odds for each file 
+        if (random_int(1, $count) === 1) {
+            $selected_file = $directory . '/' . $file;
+        }
+    }
+
+    closedir($opendir);
+
+    return $selected_file;
+}
+
 $newCode = false;
 if (!empty($SESSION->captcha_phrase) && $SESSION->captcha_time >= microtime(true) - 60 * 10 && !@$_REQUEST['regenerate_captcha']) {
     // same captcha for X minutes
@@ -74,30 +105,65 @@ if (optional_param('audio', false, PARAM_BOOL)) {
     // inside the audio_files_directory
     $audio_files_directory = get_config('local_captcha', 'audio_files_directory');
     if ($audio_files_directory) {
-        // with language and char directory
-        $files = glob($audio_files_directory . '/*/?/*.mp3');
-        foreach ($files as $file) {
-            $filepath = dirname(str_replace($audio_files_directory, '', $file));
-            $filepath = trim($filepath, '/\\');
-            $id = str_replace(['/', '\\'], '_', $filepath);
+        $audio_files = [];
+        $language = current_language();
+        $language = preg_replace('![_-].*!', '', $language);
 
-            if (!isset($audio_files[$id])) {
-                $audio_files[$id] = [];
+        // Only process directories for the current language
+        $language_dir = $audio_files_directory . '/' . $language;
+        if (is_dir($language_dir)) {
+            $dh_char = opendir($language_dir);
+            if ($dh_char) {
+                while (($char = readdir($dh_char)) !== false) {
+                    if ($char === '.' || $char === '..') {
+                        continue;
+                    }
+
+                    $char_dir = $language_dir . '/' . $char;
+                    if (is_dir($char_dir)) {
+                        $random_file = pick_random_file($char_dir);
+                        if ($random_file) {
+                            $id = $language . '_' . $char;
+                            if (!isset($audio_files[$id])) {
+                                $audio_files[$id] = [];
+                            }
+                            $audio_files[$id][] = $random_file;
+                        }
+                    }
+                }
+                closedir($dh_char);
             }
-            $audio_files[$id][] = $file;
         }
 
-        // without any directory, language + char is in the file
-        $files = glob($audio_files_directory . '/?.mp3');
-        foreach ($files as $file) {
-            $id = preg_replace('!\.mp3$!i', '', basename($file));
+        // Fallback to English if necessary
+        if (empty($audio_files)) {
+            $language_dir = $audio_files_directory . '/en';
+            if (is_dir($language_dir)) {
+                $dh_char = opendir($language_dir);
+                if ($dh_char) {
+                    while (($char = readdir($dh_char)) !== false) {
+                        if ($char === '.' || $char === '..') {
+                            continue;
+                        }
 
-            if (!isset($audio_files[$id])) {
-                $audio_files[$id] = [];
+                        $char_dir = $language_dir . '/' . $char;
+                        if (is_dir($char_dir)) {
+                            $random_file = pick_random_file($char_dir);
+                            if ($random_file) {
+                                $id = 'en_' . $char;
+                                if (!isset($audio_files[$id])) {
+                                    $audio_files[$id] = [];
+                                }
+                                $audio_files[$id][] = $random_file;
+                            }
+                        }
+                    }
+                    closedir($dh_char);
+                }
             }
-            $audio_files[$id][] = $file;
         }
     }
+
 
     header('Content-type: audio/mp3');
 

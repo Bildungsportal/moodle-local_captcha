@@ -23,9 +23,10 @@
 
 $string['pluginname'] = 'Captcha';
 
-$string['privacy:metadata'] = 'Es werden in diesem Plugin keine personenbezogenen Daten gespeichert.';
-
 $string['captcha'] = 'Captcha';
 $string['captcha:incorrect'] = 'Captcha war leider nicht korrekt!';
-$string['reload_captcha'] = 'Captcha erneut laden';
+
 $string['play_captcha_audio'] = 'Audio abspielen';
+$string['privacy:metadata'] = 'Es werden in diesem Plugin keine personenbezogenen Daten gespeichert.';
+
+$string['reload_captcha'] = 'Captcha erneut laden';

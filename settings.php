@@ -30,8 +30,8 @@ if ($hassiteconfig) {
     if ($ADMIN->fulltree) {
         $settings->add(new admin_setting_configstoredfile(
             'local_captcha/audio_files',
-            'Mp3-files for Captcha',
-            'Format: lang_char.mp3 (eg. "en_a.mp3", "en_b.mp3", ...)<br/>or subdirectories: lang/char/some.mp3 (randomly selects a file from the directory)',
+            get_string('settings:audio_files', 'local_captcha'),
+            get_string('settings:audio_files:description', 'local_captcha'),
             'audio_files',
             0,
             [
@@ -43,8 +43,8 @@ if ($hassiteconfig) {
 
         $settings->add(new \admin_setting_configfile(
             "local_captcha/audio_files_directory",
-            'Alternative: Find mp3-Files in this path',
-            '',
+            get_string('settings:audio_files_directory', 'local_captcha'),
+            get_string('settings:audio_files_directory:description', 'local_captcha'),
             '',
         ));
     }

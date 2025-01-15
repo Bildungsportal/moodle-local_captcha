@@ -23,9 +23,16 @@
 
 $string['pluginname'] = 'Captcha';
 
-$string['privacy:metadata'] = 'No personal data is stored with this plugin.';
 
 $string['captcha'] = 'Captcha';
 $string['captcha:incorrect'] = 'Captcha was not valid!';
-$string['reload_captcha'] = 'Captcha erneut laden';
-$string['play_captcha_audio'] = 'Audio abspielen';
+
+$string['play_captcha_audio'] = 'Play audio';
+$string['privacy:metadata'] = 'No personal data is stored with this plugin.';
+
+$string['reload_captcha'] = 'Reload Captcha';
+
+$string['settings:audio_files'] = 'Mp3-files upload';
+$string['settings:audio_files:description'] = 'Format: lang_char.mp3 (eg. "en_a.mp3", "en_b.mp3", ...) or subdirectories: lang/char/some.mp3 (randomly selects a file from the directory)';
+$string['settings:audio_files_directory'] = 'MP3-files path';
+$string['settings:audio_files_directory:description'] = 'As an alternative to the file upload, files can be placed in a local directory. Please enter a valid absolute path to use these files instead of the upload.';

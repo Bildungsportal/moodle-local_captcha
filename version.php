@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version = 2024040500;
+$plugin->version = 2024110500;
 $plugin->requires = 2022041900;
 $plugin->component = 'local_captcha';
-$plugin->release = '0.1';
-$plugin->maturity = MATURITY_ALPHA;
+$plugin->release = '1.0';
+$plugin->maturity = MATURITY_STABLE;
