@@ -1,10 +1,10 @@
 <div style="padding-bottom: 6px;">
-    <img src="{{captcha_url}}" id="captcha_image" style="border: 1px solid black;"/>
+    <img src="{{captcha_url}}" alt="" id="captcha_image" style="border: 1px solid black;"/>
     <div style="display: inline-block; padding: 6px 0 0 6px; vertical-align: top;">
         {{#with_audio}}
-        <a role="button" tabindex="0" href="#" onclick="playCaptchaAudio(); this.blur(); return false;" style="display: block; margin-bottom: 4px;"><i class="icon fa fa-volume-high"  title="{{#str}} play_captcha_audio, local_captcha {{/str}}"></i></a>
+        <a role="button" aria-label="{{#str}} play_captcha_audio, local_captcha {{/str}}" tabindex="0" href="#" onclick="playCaptchaAudio(); this.blur(); return false;" style="display: block; margin-bottom: 4px;"><i class="icon fa fa-volume-high"  title="{{#str}} play_captcha_audio, local_captcha {{/str}}"></i></a>
         {{/with_audio}}
-        <a role="button" tabindex="0" href="#" onclick="refreshCaptcha(); this.blur(); return false;" style="display: block"><i class="icon fa fa-refresh"  title="{{#str}} reload_captcha, local_captcha {{/str}}"></i></a>
+        <a role="button" aria-label="{{#str}} reload_captcha, local_captcha {{/str}}" tabindex="0" href="#" onclick="refreshCaptcha(); this.blur(); return false;" style="display: block"><i class="icon fa fa-refresh"  title="{{#str}} reload_captcha, local_captcha {{/str}}"></i></a>
     </div>
 </div>
 <input type="text"
