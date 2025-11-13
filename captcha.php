@@ -29,37 +29,6 @@ use Gregwar\Captcha\PhraseBuilder;
 
 $phraseBuilder = new PhraseBuilder(6, 'abcdefghijklmnpqrstuvwxyz123456789');
 
-function pick_random_file($directory) {
-    if (!is_dir($directory)) {
-        return null;
-    }
-
-    $opendir = opendir($directory);
-    if (!$opendir) {
-        return null;
-    }
-
-    $selected_file = null;
-    $count = 0;
-
-    // Iterate through alll files
-    while (($file = readdir($opendir)) !== false) {
-        if ($file === '.' || $file === '..') {
-            continue; // Skip traversals
-        }
-
-        $count++;
-        // First file always selected, each subsequent file has diminishing odds based on it's index within the dir, resulting in equal odds for each file 
-        if (random_int(1, $count) === 1) {
-            $selected_file = $directory . '/' . $file;
-        }
-    }
-
-    closedir($opendir);
-
-    return $selected_file;
-}
-
 $newCode = false;
 if (!empty($SESSION->captcha_phrase) && $SESSION->captcha_time >= microtime(true) - 60 * 10 && !@$_REQUEST['regenerate_captcha']) {
     // same captcha for X minutes
@@ -76,15 +45,16 @@ if (!empty($SESSION->captcha_phrase) && $SESSION->captcha_time >= microtime(true
 }
 
 if (optional_param('audio', false, PARAM_BOOL)) {
-    $fs = get_file_storage();
+    header('Content-type: audio/mp3');
 
     $language = current_language();
     // strip off the country code
     $language = preg_replace('![_-].*!', '', $language);
 
     // inside the upload area
+    $fs = get_file_storage();
     $files = $fs->get_area_files(\context_system::instance()->id, 'local_captcha', 'audio_files', 0, 'itemid', false);
-    $audio_files = [];
+    $filarea_audio_files = [];
     foreach ($files as $file) {
         $filepath = trim($file->get_filepath(), '/');
         if ($filepath) {
@@ -96,102 +66,60 @@ if (optional_param('audio', false, PARAM_BOOL)) {
         // in case the language / character was written uppercase
         $id = strtolower($id);
 
-        if (!isset($audio_files[$id])) {
-            $audio_files[$id] = [];
+        if (!isset($filarea_audio_files[$id])) {
+            $filarea_audio_files[$id] = [];
         }
-        $audio_files[$id][] = $file;
+        $filarea_audio_files[$id][] = $file;
     }
 
-    // inside the audio_files_directory
     $audio_files_directory = get_config('local_captcha', 'audio_files_directory');
-    if ($audio_files_directory) {
-        $audio_files = [];
-        $language = current_language();
-        $language = preg_replace('![_-].*!', '', $language);
-
-        // Only process directories for the current language
-        $language_dir = $audio_files_directory . '/' . $language;
-        if (is_dir($language_dir)) {
-            $dh_char = opendir($language_dir);
-            if ($dh_char) {
-                while (($char = readdir($dh_char)) !== false) {
-                    if ($char === '.' || $char === '..') {
-                        continue;
-                    }
-
-                    $char_dir = $language_dir . '/' . $char;
-                    if (is_dir($char_dir)) {
-                        $random_file = pick_random_file($char_dir);
-                        if ($random_file) {
-                            $id = $language . '_' . $char;
-                            if (!isset($audio_files[$id])) {
-                                $audio_files[$id] = [];
-                            }
-                            $audio_files[$id][] = $random_file;
-                        }
-                    }
-                }
-                closedir($dh_char);
-            }
-        }
-
-        // Fallback to English if necessary
-        if (empty($audio_files)) {
-            $language_dir = $audio_files_directory . '/en';
-            if (is_dir($language_dir)) {
-                $dh_char = opendir($language_dir);
-                if ($dh_char) {
-                    while (($char = readdir($dh_char)) !== false) {
-                        if ($char === '.' || $char === '..') {
-                            continue;
-                        }
-
-                        $char_dir = $language_dir . '/' . $char;
-                        if (is_dir($char_dir)) {
-                            $random_file = pick_random_file($char_dir);
-                            if ($random_file) {
-                                $id = 'en_' . $char;
-                                if (!isset($audio_files[$id])) {
-                                    $audio_files[$id] = [];
-                                }
-                                $audio_files[$id][] = $random_file;
-                            }
-                        }
-                    }
-                    closedir($dh_char);
-                }
-            }
-        }
-    }
-
-
-    header('Content-type: audio/mp3');
 
     $phrase = strtolower($SESSION->captcha_phrase);
     for ($i = 0; $i < strlen($phrase); $i++) {
         $char = $phrase[$i];
 
-        if (isset($audio_files[$language . '_' . $char])) {
-            $files = $audio_files[$language . '_' . $char];
-        } elseif (isset($audio_files[$char])) {
-            // Alternative: ohne language code zum testen
-            $files = $audio_files[$char];
-        } elseif (isset($audio_files['en' . '_' . $char])) {
-            // Fallback: english
-            $files = $audio_files['en' . '_' . $char];
-        } else {
-            // should not happen, skip the character...
-            continue;
-        }
+        if ($filarea_audio_files) {
+            if (isset($filarea_audio_files[$language . '_' . $char])) {
+                $files = $filarea_audio_files[$language . '_' . $char];
+            } elseif (isset($filarea_audio_files[$char])) {
+                // Alternative: ohne language code zum testen
+                $files = $filarea_audio_files[$char];
+            } elseif (isset($filarea_audio_files['en' . '_' . $char])) {
+                // Fallback: english
+                $files = $filarea_audio_files['en' . '_' . $char];
+            } else {
+                // should not happen, skip the character...
+                throw new \moodle_exception("no audio file for char '{$char}' found");
+            }
 
-        // randomly get a character from all variations
-        $file = $files[random_int(0, count($files) - 1)];
+            // randomly get an audio for the character
+            $randomKey = array_rand($files);
+            $file = $files[$randomKey];
 
-        // you can just concatenate the single audio files and it will work!
-        if (is_string($file)) {
+            echo $file->get_content();
+        } elseif ($audio_files_directory) {
+            if (!is_dir($audio_files_directory)) {
+                throw new \moodle_exception('audio files directory not found');
+            }
+
+            // directory for the current language
+            $files = glob("{$audio_files_directory}/{$language}/{$char}/*.mp3")
+                // Fallback to English if necessary
+                ?: glob("{$audio_files_directory}/en/{$char}/*.mp3")
+                    // Fallback in dev
+                    ?: glob("{$audio_files_directory}/{$char}.mp3");
+
+            if (!$files) {
+                throw new \moodle_exception("no audio file for char '{$char}' found");
+            }
+
+            // randomly get an audio for the character
+            $randomKey = array_rand($files);
+            $file = $files[$randomKey];
+
             echo file_get_contents($file);
         } else {
-            echo $file->get_content();
+            throw new \moodle_exception('no audio files configured');
         }
     }
 } else {

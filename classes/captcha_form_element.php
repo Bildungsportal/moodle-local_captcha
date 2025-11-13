@@ -78,9 +78,13 @@ class captcha_form_element extends \MoodleQuickForm_static {
         global $OUTPUT;
 
         $hasError = $this->_isValid === false;
-        if (!$hasError && $this->form) {
-            $hasError = !empty($this->form->_errors[$this->getName()]);
+        if (!$hasError && $this->_form) {
+            $hasError = !empty($this->_form->_errors[$this->getName()]);
         }
+
+        $language = current_language();
+        // strip off the country code
+        $language = preg_replace('![_-].*!', '', $language);
 
         // check if there are audiofiles to show the audio play button
         $fs = get_file_storage();
@@ -89,7 +93,9 @@ class captcha_form_element extends \MoodleQuickForm_static {
             $audio_files_directory = get_config('local_captcha', 'audio_files_directory');
             if ($audio_files_directory) {
                 // with language and char directory
-                $files = glob($audio_files_directory . '/*/?/*.mp3');
+                $files = glob("{$audio_files_directory}/{$language}/a/*.mp3")
+                    // Fallback to English if necessary
+                    ?: glob("{$audio_files_directory}/en/a/*.mp3");
             }
         }
 
@@ -131,7 +137,7 @@ class captcha_form_element extends \MoodleQuickForm_static {
      */
     public function onQuickFormEvent($event, $arg, &$caller) {
         // remember the form for later
-        $this->form = $caller;
+        $this->_form = $caller;
 
         $caller->setType($this->getName(), PARAM_TEXT);
 
