@@ -1,0 +1,9 @@
+#local_captcha-captcha_container.is_solved .local_captcha-captcha_input_container,
+#local_captcha-captcha_container.is_solved input,
+#local_captcha-captcha_container:not(.is_solved) .local_captcha-captcha_solved_container {
+    display: none;
+}
+
+#local_captcha-captcha_container .local_captcha-input {
+    width: 120px;
+}

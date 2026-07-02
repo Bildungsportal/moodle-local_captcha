@@ -25,12 +25,14 @@ $string['pluginname'] = 'Captcha';
 
 
 $string['captcha'] = 'Captcha';
-$string['captcha:incorrect'] = 'Captcha was not valid!';
+$string['captcha:incorrect'] = 'Captcha is not valid!';
 
 $string['play_captcha_audio'] = 'Play audio';
 $string['privacy:metadata'] = 'No personal data is stored with this plugin.';
 
 $string['reload_captcha'] = 'Reload Captcha';
+
+$string['captcha_is_valid'] = 'Captcha valid!';
 
 $string['settings:audio_files'] = 'Mp3-files upload';
 $string['settings:audio_files:description'] = 'Format: lang_char.mp3 (eg. "en_a.mp3", "en_b.mp3", ...) or subdirectories: lang/char/some.mp3 (randomly selects a file from the directory)';

@@ -45,6 +45,7 @@ class captcha_form_element extends \MoodleQuickForm_static {
     protected bool|null $_isValid = null;
     protected $_form = null;
     protected string $_value = '';
+    protected string $captchaid = '';
 
     /**
      * @var bool|mixed should the captcha be invalidated automatically, or by by the caller after the $form->get_data()
@@ -71,11 +72,13 @@ class captcha_form_element extends \MoodleQuickForm_static {
             $this->_setCaptchaUsed = $options['set_captcha_used'];
         }
 
+        $this->captchaid = optional_param('captchaid', '', PARAM_TEXT);
+
         parent::__construct($elementName, $elementLabel, '');
     }
 
     public function toHtml(): string {
-        global $OUTPUT;
+        global $OUTPUT, $PAGE;
 
         $hasError = $this->_isValid === false;
         if (!$hasError && $this->_form) {
@@ -101,27 +104,37 @@ class captcha_form_element extends \MoodleQuickForm_static {
 
         $with_audio = !!$files;
 
+        $captcha_data = locallib::get_captcha_data($this->captchaid);
+        $this->captchaid = $captcha_data->captchaid;
+
+        $PAGE->requires->js_call_amd('local_captcha/captcha', 'init', [[
+            'is_solved' => $captcha_data->is_solved ?? false,
+            'captchaid' => $this->captchaid,
+            'strings' => [
+                'captcha:incorrect' => get_string('captcha:incorrect', 'local_captcha'),
+            ]
+        ]]);
+
         $params = [
             'element' => [
                 'id' => $this->getAttribute('id'),
                 'name' => $this->getName(),
                 // only use the existing value, if it was correct
-                'value' => $this->_value,
+                'value' => $this->_value, // ?: ($captcha_data->solved_phrase ?? ''),
                 // mark as required for screeen readers
                 'attributes' => 'required="" aria-label="Captcha"',
             ],
-            'captcha_url' => new \moodle_url('/local/captcha/captcha.php', ['rand' => time()]),
+            'captchaid' => $this->captchaid,
+            'captcha_url' => (new \moodle_url('/local/captcha/captcha.php', ['captchaid' => $this->captchaid, 'rand' => time()]))->out(false),
             'with_audio' => $with_audio,
             'error' => $hasError,
         ];
-
 
         return $OUTPUT->render_from_template('local_captcha/captcha', $params);
     }
 
     public static function setCaptchaUsed() {
-        global $SESSION;
-        $SESSION->captcha_phrase = '';
+        locallib::clear_captcha_data(optional_param('captchaid', '', PARAM_TEXT));
     }
 
     /**
@@ -169,39 +182,26 @@ class captcha_form_element extends \MoodleQuickForm_static {
     }
 
     public function validate(string $elementValue): bool {
-        global $SESSION;
-
         $elementValue = trim($elementValue);
 
         if (empty($elementValue)) {
             // kein user input
             return $this->_isValid = false;
         }
-        if (empty($SESSION->captcha_phrase)) {
-            // kein captcha
-            return $this->_isValid = false;
-        }
-        if ($SESSION->captcha_time < time() - 60 * 10) {
-            // captcha timeout abgelaufen
-            return $this->_isValid = false;
-        }
 
-        $builder = new \Gregwar\Captcha\CaptchaBuilder($SESSION->captcha_phrase);
-        // testPhrase() also fuzzy-compares 0 and o and 1 and l (lowercase L)
-        // lowercase, because the captcha is lowercase and so we can do an case-insensitive compare
-        $_isValid = $builder->testPhrase(strtolower($elementValue));
+        $_isValid = locallib::test_captcha($this->captchaid, $elementValue);
 
         if (!$_isValid) {
             if ($elementValue) {
                 // regenerate phrase on incorrect input
-                static::setCaptchaUsed();
+                locallib::clear_captcha_data($this->captchaid);
             }
 
             return $this->_isValid = false;
         }
 
         if ($this->_setCaptchaUsed) {
-            static::setCaptchaUsed();
+            locallib::clear_captcha_data($this->captchaid);
         }
 
         $this->_value = $elementValue;

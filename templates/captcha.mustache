@@ -1,55 +1,33 @@
-<div style="padding-bottom: 6px;">
-    <img src="{{captcha_url}}" alt="" id="captcha_image" style="border: 1px solid black;"/>
-    <div style="display: inline-block; padding: 6px 0 0 6px; vertical-align: top;">
-        {{#with_audio}}
-        <a role="button" aria-label="{{#str}} play_captcha_audio, local_captcha {{/str}}" tabindex="0" href="#" onclick="playCaptchaAudio(); this.blur(); return false;" style="display: block; margin-bottom: 4px;"><i class="icon fa fa-volume-high"  title="{{#str}} play_captcha_audio, local_captcha {{/str}}"></i></a>
-        {{/with_audio}}
-        <a role="button" aria-label="{{#str}} reload_captcha, local_captcha {{/str}}" tabindex="0" href="#" onclick="refreshCaptcha(); this.blur(); return false;" style="display: block"><i class="icon fa fa-refresh"  title="{{#str}} reload_captcha, local_captcha {{/str}}"></i></a>
+<div id="local_captcha-captcha_container" style="display: none;">
+    <div class="local_captcha-captcha_input_container">
+        <div style="padding-bottom: 6px;">
+            <img src="{{captcha_url}}" alt="" id="local_captcha-captcha_image" style="border: 1px solid black;"/>
+            <div style="display: inline-block; padding: 6px 0 0 6px; vertical-align: top;">
+                {{#with_audio}}
+                <a id="local_captcha-play_audio" role="button" aria-label="{{#str}} play_captcha_audio, local_captcha {{/str}}" tabindex="0" href="#" style="display: block; margin-bottom: 6px;"><i class="icon fa fa-volume-high"  title="{{#str}} play_captcha_audio, local_captcha {{/str}}"></i></a>
+                {{/with_audio}}
+                <a id="local_captcha-regnerate_captcha" role="button" aria-label="{{#str}} reload_captcha, local_captcha {{/str}}" tabindex="0" href="#" style="display: block"><i class="icon fa fa-refresh"  title="{{#str}} reload_captcha, local_captcha {{/str}}"></i></a>
+            </div>
+        </div>
+        <input type="hidden" name="captchaid" value="{{captchaid}}">
+        <input type="text"
+               class="form-control {{#error}}is-invalid{{/error}} local_captcha-input d-inline-block"
+               maxlength="6"
+               name="{{element.name}}"
+            {{#element.frozen}}
+               readonly {{#element.hardfrozen}}disabled{{/element.hardfrozen}}
+            {{/element.frozen}}
+               id="{{element.id}}"
+               value="{{element.value}}"
+               {{#element.size}}size="{{element.size}}"{{/element.size}}
+            {{#error}}
+               autofocus aria-describedby="{{element.iderror}}"
+            {{/error}}
+            {{{element.attributes}}}>
+    </div>
+
+    <div class="local_captcha-captcha_solved_container">
+        <i class="fa fa-check-circle" style="color: #28a745;"></i>
+        <span style="margin-left: 6px">{{#str}} captcha_is_valid, local_captcha{{/str}}</span>
     </div>
 </div>
-<input type="text"
-       class="form-control {{#error}}is-invalid{{/error}}"
-       name="{{element.name}}"
-    {{#element.frozen}}
-       readonly {{#element.hardfrozen}}disabled{{/element.hardfrozen}}
-    {{/element.frozen}}
-       id="{{element.id}}"
-       value="{{element.value}}"
-       {{#element.size}}size="{{element.size}}"{{/element.size}}
-    {{#error}}
-       autofocus aria-describedby="{{element.iderror}}"
-    {{/error}}
-    {{{element.attributes}}} >
-
-<script>
-
-    var captchaAudio = null;
-
-    //Refresh Captcha
-    function refreshCaptcha() {
-        var img = document.images['captcha_image'];
-        img.src = img.src.substring(
-            0, img.src.lastIndexOf("?")
-        ) + "?rand=" + Math.random() * 1000 + "&regenerate_captcha=1";
-
-        if (captchaAudio) {
-            // reset audio, if playing
-            captchaAudio.pause();
-            captchaAudio = null;
-        }
-    }
-
-    function playCaptchaAudio() {
-        var img = document.images['captcha_image'];
-
-        if (!captchaAudio) {
-            captchaAudio = new Audio(img.src.replace('regenerate_captcha=1', '') + '&audio=1');
-        }
-        if (captchaAudio.paused) {
-            captchaAudio.play();
-        } else {
-            captchaAudio.pause();
-            captchaAudio.currentTime = 0; // Reset the audio to the beginning
-        }
-    }
-</script>

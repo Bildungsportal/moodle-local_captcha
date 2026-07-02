@@ -25,26 +25,15 @@
 require_once(__DIR__ . '/inc.php');
 
 use Gregwar\Captcha\CaptchaBuilder;
-use Gregwar\Captcha\PhraseBuilder;
+use local_captcha\locallib;
 
-$phraseBuilder = new PhraseBuilder(6, 'abcdefghijklmnpqrstuvwxyz123456789');
+$captchaid = required_param('captchaid', PARAM_TEXT);
+$regenerate_captcha = optional_param('regenerate_captcha', false, PARAM_BOOL);
+$captcha_data = locallib::get_captcha_data($captchaid, $regenerate_captcha);
 
-$newCode = false;
-if (!empty($SESSION->captcha_phrase) && $SESSION->captcha_time >= microtime(true) - 60 * 10 && !@$_REQUEST['regenerate_captcha']) {
-    // same captcha for X minutes
-    $builder = new CaptchaBuilder($SESSION->captcha_phrase, $phraseBuilder);
-    $builder->build(150, 60, null, $SESSION->captcha_fingerprint);
-} else {
-    $newCode = true;
-    $builder = new CaptchaBuilder(null, $phraseBuilder);
-    $builder->build(150, 60);
+$type = optional_param('type', '', PARAM_TEXT);
 
-    $SESSION->captcha_phrase = $builder->getPhrase();
-    $SESSION->captcha_time = microtime(true);
-    $SESSION->captcha_fingerprint = $builder->getFingerprint();
-}
-
-if (optional_param('audio', false, PARAM_BOOL)) {
+if ($type == 'audio') {
     header('Content-type: audio/mp3');
 
     $language = current_language();
@@ -74,7 +63,7 @@ if (optional_param('audio', false, PARAM_BOOL)) {
 
     $audio_files_directory = get_config('local_captcha', 'audio_files_directory');
 
-    $phrase = strtolower($SESSION->captcha_phrase);
+    $phrase = strtolower($captcha_data->phrase);
     for ($i = 0; $i < strlen($phrase); $i++) {
         $char = $phrase[$i];
 
@@ -122,7 +111,41 @@ if (optional_param('audio', false, PARAM_BOOL)) {
             throw new \moodle_exception('no audio files configured');
         }
     }
+} elseif ($type == 'json') {
+    if ($captchaid == $captcha_data->captchaid) {
+        header("Content-type: application/json");
+        echo json_encode([
+            'is_same' => true,
+        ]);
+        exit;
+    }
+
+    $builder = new CaptchaBuilder($captcha_data->phrase, null);
+    $builder->build(150, 60, null, $captcha_data->fingerprint);
+    ob_start();
+    $builder->output();
+    $image_data = ob_get_clean();
+    $image_data = base64_encode($image_data);
+
+    header("Content-type: application/json");
+    echo json_encode([
+        'is_same' => false,
+        'captchaid' => $captcha_data->captchaid,
+        'image_data' => 'data:image/jpeg;base64,' . $image_data,
+    ]);
+} elseif ($type == 'check') {
+    $captcha = required_param('captcha', PARAM_TEXT);
+    $isSolved = locallib::test_captcha($captchaid, $captcha);
+
+    header("Content-type: application/json");
+    echo json_encode([
+        'is_solved' => $isSolved,
+        'captchaid' => $isSolved ? $captchaid : locallib::get_captcha_data($captchaid)->captchaid,
+    ]);
+
 } else {
     header('Content-type: image/jpeg');
+    $builder = new CaptchaBuilder($captcha_data->phrase, null);
+    $builder->build(150, 60, null, $captcha_data->fingerprint);
     $builder->output();
 }
